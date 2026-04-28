@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pristine Wear</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --primary:#8b5e3c;
+  --bg:#f8f3ef;
+  --text:#2e2e2e;
+}
+
+body{
+  margin:0;
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+h1,h2,h3{
+  font-family:'Playfair Display',serif;
+}
+
+.nav{
+  display:flex;
+  justify-content:space-between;
+  padding:15px 20px;
+  background:#fff;
+  position:sticky;
+  top:0;
+}
+
+.nav a{
+  text-decoration:none;
+  color:var(--text);
+  margin:0 10px;
+}
+
+.cart{
+  position:relative;
+}
+
+.cart span{
+  position:absolute;
+  top:-8px;
+  right:-10px;
+  background:var(--primary);
+  color:#fff;
+  font-size:12px;
+  padding:2px 6px;
+  border-radius:50%;
+}
+
+.hero{
+  padding:60px;
+  text-align:center;
+}
+
+.btn{
+  background:var(--primary);
+  color:#fff;
+  border:none;
+  padding:10px 15px;
+  cursor:pointer;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:20px;
+  padding:20px;
+}
+
+.card{
+  background:#fff;
+  padding:15px;
+  border-radius:10px;
+  transition:.3s;
+}
+
+.card:hover{
+  transform:translateY(-5px);
+}
+
+img{
+  width:100%;
+  border-radius:10px;
+}
+
+.page{
+  display:none;
+}
+
+.active{
+  display:block;
+}
+
+input,textarea{
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="nav">
+  <h2>Pristine Wear</h2>
+  <div>
+    <a href="#/">Home</a>
+    <a href="#cart" class="cart">Cart <span id="cartCount">0</span></a>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="home" class="page active">
+  <div class="hero">
+    <h1>Handmade Premium Fashion</h1>
+    <p>Best fitting outfits from ₹500 to ₹5000</p>
+  </div>
+
+  <div style="text-align:center">
+    <select id="filter">
+      <option value="all">All</option>
+      <option value="pant">Pant</option>
+      <option value="shirt">Shirt</option>
+      <option value="jeans">Jeans</option>
+      <option value="tshirt">Tshirt</option>
+      <option value="coat pant">Coat Pant</option>
+      <option value="kurti">Kurti</option>
+    </select>
+  </div>
+
+  <div class="grid" id="productGrid"></div>
+</div>
+
+<!-- PRODUCT PAGE -->
+<div id="productPage" class="page"></div>
+
+<!-- CART PAGE -->
+<div id="cartPage" class="page"></div>
+
+<!-- CHECKOUT -->
+<div id="checkoutPage" class="page"></div>
+
+<script>
+const CONFIG={
+  name:"Pristine Wear",
+  currency:"₹",
+  formspree:"PASTE_YOUR_URL_HERE"
+}
+
+/* PRODUCTS */
+const PRODUCTS=[
+{
+id:1,
+category:"shirt",
+name:"Classic White Shirt",
+price:999,
+description:"Hand made premium shirt",
+images:["https://via.placeholder.com/300"],
+stock:10
+},
+{
+id:2,
+category:"jeans",
+name:"Blue Denim Jeans",
+price:1499,
+description:"Perfect fitting jeans",
+images:["https://via.placeholder.com/300"],
+stock:10
+},
+{
+id:3,
+category:"kurti",
+name:"Designer Kurti",
+price:799,
+description:"Elegant kurti",
+images:["https://via.placeholder.com/300"],
+stock:10
+}
+];
+
+/* CART */
+let cart=JSON.parse(localStorage.getItem("neo_cart")||"[]");
+
+function saveCart(){
+localStorage.setItem("neo_cart",JSON.stringify(cart));
+updateCartCount();
+}
+
+function updateCartCount(){
+document.getElementById("cartCount").innerText=
+cart.reduce((a,b)=>a+b.qty,0);
+}
+
+/* HOME */
+function renderProducts(){
+let grid=document.getElementById("productGrid");
+grid.innerHTML="";
+
+let filter=document.getElementById("filter").value;
+
+PRODUCTS.filter(p=>filter==="all"||p.category===filter)
+.forEach(p=>{
+let inCart=cart.find(c=>c.id===p.id);
+
+grid.innerHTML+=`
+<div class="card">
+<img src="${p.images[0]}">
+<h3>${p.name}</h3>
+<p>${CONFIG.currency}${p.price}</p>
+
+<button onclick="addToCart(${p.id})">
+${inCart?"In Cart ✓":"Add to Cart"}
+</button>
+
+<button onclick="viewProduct(${p.id})">View</button>
+</div>`;
+});
+}
+
+/* PRODUCT PAGE */
+function viewProduct(id){
+let p=PRODUCTS.find(x=>x.id===id);
+
+document.getElementById("productPage").innerHTML=`
+<h2>${p.name}</h2>
+<img src="${p.images[0]}">
+<p>${p.description}</p>
+<h3>${CONFIG.currency}${p.price}</h3>
+
+<input type="number" id="qty" value="1" min="1">
+
+<button onclick="addToCart(${p.id})">Add to Cart</button>
+`;
+
+navigate("productPage");
+}
+
+/* CART */
+function addToCart(id){
+let item=cart.find(x=>x.id===id);
+
+if(item){
+item.qty++;
+}else{
+cart.push({id,qty:1});
+}
+
+saveCart();
+renderProducts();
+}
+
+function renderCart(){
+let div=document.getElementById("cartPage");
+
+let total=0;
+
+div.innerHTML="<h2>Your Cart</h2>";
+
+cart.forEach(c=>{
+let p=PRODUCTS.find(x=>x.id===c.id);
+total+=p.price*c.qty;
+
+div.innerHTML+=`
+<div>
+${p.name} (${c.qty})
+<button onclick="changeQty(${c.id},1)">+</button>
+<button onclick="changeQty(${c.id},-1)">-</button>
+<button onclick="removeItem(${c.id})">Remove</button>
+</div>`;
+});
+
+div.innerHTML+=`<h3>Total: ${CONFIG.currency}${total}</h3>
+<button onclick="navigate('checkoutPage')">Checkout</button>`;
+}
+
+function changeQty(id,val){
+let item=cart.find(x=>x.id===id);
+item.qty+=val;
+if(item.qty<=0) cart=cart.filter(x=>x.id!==id);
+saveCart();
+renderCart();
+}
+
+function removeItem(id){
+cart=cart.filter(x=>x.id!==id);
+saveCart();
+renderCart();
+}
+
+/* CHECKOUT */
+function renderCheckout(){
+let total=0;
+
+cart.forEach(c=>{
+let p=PRODUCTS.find(x=>x.id===c.id);
+total+=p.price*c.qty;
+});
+
+document.getElementById("checkoutPage").innerHTML=`
+<h2>Checkout</h2>
+
+<form onsubmit="submitOrder(event)">
+<input placeholder="Name" required>
+<input placeholder="Email" required>
+<input placeholder="Phone" required>
+<textarea placeholder="Address"></textarea>
+<textarea placeholder="Notes"></textarea>
+
+<h3>Total: ${CONFIG.currency}${total}</h3>
+
+<button type="submit">Place Order</button>
+</form>
+`;
+}
+
+function submitOrder(e){
+e.preventDefault();
+
+fetch(CONFIG.formspree,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(cart)
+});
+
+alert("Order placed!");
+cart=[];
+saveCart();
+setTimeout(()=>location.hash="#/",3000);
+}
+
+/* ROUTER */
+function navigate(page){
+document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+document.getElementById(page).classList.add("active");
+}
+
+window.onhashchange=router;
+
+function router(){
+let hash=location.hash;
+
+if(hash==="#cart"){
+navigate("cartPage");
+renderCart();
+}
+else if(hash==="#checkout"){
+navigate("checkoutPage");
+renderCheckout();
+}
+else{
+navigate("home");
+renderProducts();
+}
+}
+
+document.getElementById("filter").onchange=renderProducts;
+
+router();
+updateCartCount();
+</script>
+
+</body>
+  </html>
